@@ -5,8 +5,14 @@ import onesignal as onesignal_sdk
 
 app = Flask(__name__)
 
-@app.route('/',methods=['POST'])
-def foo():
+@app.route('/news',methods=['POST'])
+def news():
+   nytData = json.loads(request.data)
+   sendNewsNotification(nytData)
+   return "OK"
+
+@app.route('/movie',methods=['POST'])
+def movie():
    youtubeData = json.loads(request.data)
    if(youtubeData['title'].lower().find('trailer')==-1):
        return "OK"
@@ -16,6 +22,28 @@ def foo():
        return "OK"
    sendNotification(youtubeData,omdbData)
    return "OK"
+
+def sendNewsNotification(nytData):
+    onesignal_client = onesignal_sdk.Client()
+    onesignal_client.user_auth_key = "XXX"
+    onesignal_client.app = {"app_auth_key": "TTTT", "app_id": "FFFF"}
+    new_notification = onesignal_sdk.Notification(contents={"en": "{}".format(nytData['title'])})
+
+    new_notification.set_parameter("headings", {"en": "{}".format(nytData['section'] + ' News')})
+    new_notification.set_parameter("data", { "type" : "3", "movieId" : "tt45268", "videoId" : "_rsd432t32", "webpageUrl" : "{}".format(nytData['url']) })
+
+    multimediaUrls = nytData['multimedia'].split(',')
+    multimediaUrl = multimediaUrls[-1]
+    smallMultimediaUrl = multimediaUrls[0]
+
+    new_notification.set_parameter("big_picture", "{}".format(multimediaUrl))
+    new_notification.set_parameter("small_icon", "https://developer.nytimes.com/files/poweredby_nytimes_30a.png?v=1539041430000")
+    # new_notification.set_parameter("large_icon", "https://yt3.ggpht.com/a-/AAuE7mA31JFXfi7gZyjlR_RAJAa5ctCJlemkqgDF=s288-mo-c-c0xffffffff-rj-k-no")
+    # new_notification.set_included_segments(["All"])
+    new_notification.set_target_devices(["DDDD"])
+    onesignal_response = onesignal_client.send_notification(new_notification)
+    print(onesignal_response.status_code)
+    print(onesignal_response.json())
 
 def getOmdbData(title):
     i = 1000
